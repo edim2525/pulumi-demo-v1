@@ -1,14 +1,48 @@
 # Pulumi Demo - AWS S3 Bucket
 
-My first Pulumi project for creating an AWS S3 bucket using Python.
+My first Pulumi project for creating AWS S3 buckets using Python with multi-environment support.
 
 ## Project Information
 
 - **Project Name:** pulumi-demo-v1
-- **Stack:** dev
+- **Stacks:** dev, prod
 - **AWS Region:** us-east-1
 - **AWS Account:** 821770019153
-- **Pulumi Backend:** Local file system (`file://~`)
+- **Pulumi Backend:** Pulumi Cloud (https://app.pulumi.com/edim2525)
+
+## Project Structure
+
+```
+pulumi-demo-v1/
+├── pulumi_resources/           # Infrastructure code
+│   ├── __main__.py            # Main infrastructure definition
+│   ├── Pulumi.yaml            # Project configuration
+│   ├── Pulumi.dev.yaml        # Dev stack config (managed by CLI)
+│   ├── Pulumi.prod.yaml       # Prod stack config (managed by CLI)
+│   ├── requirements.txt       # Python dependencies
+│   └── environments/          # Per-environment configurations
+│       ├── dev/
+│       │   ├── Pulumi.dev.yaml
+│       │   └── requirements.txt
+│       └── prod/
+│           ├── Pulumi.prod.yaml
+│           └── requirements.txt
+├── venv/                      # Python virtual environment
+├── requirements.txt           # Top-level dependencies
+└── README.md
+```
+
+## Current Infrastructure
+
+**Dev Environment:**
+- Bucket: `edi-pulumi-demo-dev`
+- Tags: Environment=dev, Project=pulumi-demo, ManagedBy=Pulumi
+- Stack URL: https://app.pulumi.com/edim2525/pulumi-demo-v1/dev
+
+**Prod Environment:**
+- Bucket: `edi-pulumi-demo-prod`
+- Tags: Environment=prod, Project=pulumi-demo, ManagedBy=Pulumi
+- Stack URL: https://app.pulumi.com/edim2525/pulumi-demo-v1/prod
 
 ## Prerequisites
 
@@ -16,6 +50,7 @@ My first Pulumi project for creating an AWS S3 bucket using Python.
 2. **Python 3.9+** - Already installed ✓
 3. **AWS Account** - Private AWS account ✓
 4. **AWS Credentials** - Configured in `~/.zprofile`
+5. **Pulumi Cloud Account** - Logged in as edim2525 ✓
 
 ## AWS Credentials Setup
 
@@ -40,6 +75,218 @@ source ~/.zprofile
 aws sts get-caller-identity
 ```
 
+## How Pulumi Determines Which AWS Account to Use
+
+Pulumi uses the **AWS SDK** under the hood, which means it follows the same credential resolution process as the AWS CLI and other AWS tools. Here's how Pulumi knows which AWS account to use:
+
+### Credential Resolution Order
+
+Pulumi checks for AWS credentials in the following order:
+
+1. **Environment Variables** (Highest Priority)
+   ```bash
+   export AWS_ACCESS_KEY_ID="your-access-key"
+   export AWS_SECRET_ACCESS_KEY="your-secret-key"
+   export AWS_REGION="us-east-1"
+   ```
+   This is what we're using in this project (stored in `~/.zprofile`)
+
+2. **AWS CLI Configuration Files**
+   ```bash
+   ~/.aws/credentials  # Credentials file
+   ~/.aws/config       # Configuration file with profiles
+   ```
+
+3. **IAM Role (for EC2 instances, Lambda, etc.)**
+   - Automatically assigned when running on AWS infrastructure
+   - Uses instance metadata service
+
+4. **Environment-specific variables**
+   - `AWS_PROFILE` - Select a specific AWS CLI profile
+   - `AWS_SESSION_TOKEN` - For temporary credentials
+
+### Current Configuration
+
+**This project uses Account:** 821770019153  
+**IAM User:** edi-pulumi-user  
+**Region:** us-east-1
+
+You can verify which account Pulumi will use:
+
+```bash
+# Check current AWS identity
+aws sts get-caller-identity
+
+# Output shows:
+# {
+#     "UserId": "AIDAXXXXXXXXXXXXXXXXX",
+#     "Account": "821770019153",
+#     "Arn": "arn:aws:iam::821770019153:user/edi-pulumi-user"
+# }
+```
+
+### Using Different AWS Accounts
+
+If you have multiple AWS accounts (e.g., dev account, prod account), here are your options:
+
+#### Option 1: Use AWS CLI Profiles (Recommended)
+
+**Setup profiles in `~/.aws/credentials`:**
+```ini
+[default]
+aws_access_key_id = YOUR_DEFAULT_KEY
+aws_secret_access_key = YOUR_DEFAULT_SECRET
+
+[dev-account]
+aws_access_key_id = YOUR_DEV_KEY
+aws_secret_access_key = YOUR_DEV_SECRET
+
+[prod-account]
+aws_access_key_id = YOUR_PROD_KEY
+aws_secret_access_key = YOUR_PROD_SECRET
+```
+
+**Use specific profile with Pulumi:**
+```bash
+# Set profile for dev stack
+cd pulumi_resources/environments/dev
+export AWS_PROFILE=dev-account
+pulumi up
+
+# Set profile for prod stack
+cd pulumi_resources/environments/prod
+export AWS_PROFILE=prod-account
+pulumi up
+```
+
+#### Option 2: Configure Profile in Stack Config
+
+You can specify the AWS profile directly in your Pulumi stack configuration:
+
+```bash
+# For dev stack
+cd pulumi_resources/environments/dev
+pulumi config set aws:profile dev-account
+
+# For prod stack
+cd pulumi_resources/environments/prod
+pulumi config set aws:profile prod-account
+```
+
+This stores the profile in `Pulumi.dev.yaml` / `Pulumi.prod.yaml`:
+```yaml
+config:
+  aws:profile: dev-account
+  aws:region: us-east-1
+  pulumi-demo-v1:bucket_name: edi-pulumi-demo-dev
+  pulumi-demo-v1:environment: dev
+```
+
+#### Option 3: Set Environment Variables Per Stack
+
+Create environment-specific scripts:
+
+**`dev-env.sh`:**
+```bash
+#!/bin/bash
+export AWS_ACCESS_KEY_ID="dev-account-key"
+export AWS_SECRET_ACCESS_KEY="dev-account-secret"
+export AWS_REGION="us-east-1"
+export PULUMI_CONFIG_PASSPHRASE=""
+```
+
+**`prod-env.sh`:**
+```bash
+#!/bin/bash
+export AWS_ACCESS_KEY_ID="prod-account-key"
+export AWS_SECRET_ACCESS_KEY="prod-account-secret"
+export AWS_REGION="us-east-1"
+export PULUMI_CONFIG_PASSPHRASE=""
+```
+
+**Usage:**
+```bash
+# For dev
+source dev-env.sh
+cd pulumi_resources/environments/dev
+pulumi up
+
+# For prod
+source prod-env.sh
+cd pulumi_resources/environments/prod
+pulumi up
+```
+
+### Verify Which Account Pulumi Will Use
+
+Before running `pulumi up`, always verify you're using the correct account:
+
+```bash
+# Method 1: Check AWS identity
+aws sts get-caller-identity
+
+# Method 2: Check Pulumi config
+pulumi config
+
+# Method 3: Preview without applying
+pulumi preview
+# This shows which resources will be affected in which account
+```
+
+### How Pulumi Compares Resources
+
+When you run `pulumi up` or `pulumi preview`, Pulumi:
+
+1. **Reads your code** (`__main__.py`) to see what infrastructure you want
+2. **Checks its state** (stored in Pulumi Cloud) to see what's currently deployed
+3. **Queries AWS** using your credentials to verify actual resources
+4. **Compares** the three sources to determine what needs to be created, updated, or deleted
+
+**Example:**
+```bash
+cd pulumi_resources/environments/dev
+pulumi preview
+
+# Pulumi will:
+# 1. Read __main__.py and see you want a bucket named "edi-pulumi-demo-dev"
+# 2. Check state in Pulumi Cloud for stack "edim2525/pulumi-demo-v1/dev"
+# 3. Query AWS account 821770019153 using your credentials
+# 4. Compare and show: "no changes required" or "will create/update/delete"
+```
+
+### Important Notes
+
+⚠️ **State vs Reality:**
+- Pulumi's state tracks what *Pulumi thinks* exists
+- AWS has the actual resources
+- If someone manually changes resources in AWS Console, Pulumi won't know until you run `pulumi refresh`
+
+⚠️ **Account Isolation:**
+- Each AWS account is completely separate
+- Resources in account A cannot be seen or modified from account B
+- You need separate credentials for each account
+
+⚠️ **Stack and Account Relationship:**
+- One Pulumi stack = One set of resources in one AWS account
+- You can have `dev` stack pointing to dev AWS account
+- And `prod` stack pointing to prod AWS account
+- The stack name doesn't automatically determine the AWS account - YOU configure which account via credentials
+
+### Best Practice: Document Your Account Strategy
+
+Add this to your stack configuration or README:
+
+```yaml
+# Pulumi.dev.yaml
+# This stack deploys to AWS Account: 821770019153 (Dev Account)
+# IAM User: edi-pulumi-user-dev
+# Region: us-east-1
+config:
+  aws:region: us-east-1
+  pulumi-demo-v1:bucket_name: edi-pulumi-demo-dev
+  pulumi-demo-v1:environment: dev
+```
+
 ## Required IAM Permissions
 
 The IAM user `edi-pulumi-user` needs the following S3 permissions:
@@ -52,315 +299,372 @@ The IAM user `edi-pulumi-user` needs the following S3 permissions:
 
 **Quick setup:** Attach `AmazonS3FullAccess` managed policy to your IAM user.
 
-## How Pulumi Stores Your Stack State
+## Pulumi Cloud Backend
 
-Pulumi needs to track the state of your infrastructure to know what resources exist and their current configuration. Since we configured it with `pulumi login --local`, the state is stored **locally on your computer** (not in Pulumi's cloud service).
+This project uses **Pulumi Cloud** to store infrastructure state, which provides:
 
-### State Storage Locations
+- ✅ **Cloud-based state storage** - Access your state from any machine
+- ✅ **State locking** - Prevents concurrent modifications
+- ✅ **State history** - View and rollback to previous versions
+- ✅ **Team collaboration** - Share stacks with team members
+- ✅ **Web dashboard** - View resources at https://app.pulumi.com/edim2525/pulumi-demo-v1
 
-Your stack state exists in **TWO locations**:
-
-#### 1. Primary State (Used by Pulumi)
-```
-~/.pulumi/stacks/pulumi-demo-v1/dev.json
-```
-This is where Pulumi reads and writes state during operations (`pulumi up`, `pulumi preview`, etc.).
-
-#### 2. Backup State (In This Repository)
-```
-stack-state-dev.json
-```
-This is a backup copy stored in the repository for:
-- Version control and history
-- Portability (easy to clone and restore)
-- Team sharing (if needed)
-- Backup and disaster recovery
-
-Breaking down the primary state path:
-- `~/.pulumi/` - Pulumi's home directory
-- `stacks/` - Where all stack state files are stored
-- `pulumi-demo-v1/` - Your project name
-- `dev.json` - Your stack name (dev)
-
-### What's Stored in the State File
-
-The state file (`dev.json`) contains:
-1. **All deployed resources** - URNs, types, and properties of your S3 bucket
-2. **Resource outputs** - Values like bucket name and ARN
-3. **Configuration** - Stack config and secrets (encrypted with passphrase)
-4. **Deployment history** - Timestamps and metadata about deployments
-5. **Resource dependencies** - Relationships between resources
-
-### State File Backups
-
-Pulumi automatically creates backups:
-- `dev.json` - Current state
-- `dev.json.bak` - Previous state (before last operation)
-- `dev.json.attrs` - Metadata about current state
-- `dev.json.bak.attrs` - Metadata about backup
-
-### Backend Configuration
-
-Your backend is configured in:
-```
-~/.pulumi/credentials.json
-```
-
-Current setting:
-```json
-{
-    "current": "file://~",
-    "accessTokens": {
-        "file://~": ""
-    }
-}
-```
-
-This tells Pulumi to use the local file system (`file://~`) instead of the Pulumi Cloud service.
-
-### View Your State
+### Login to Pulumi Cloud
 
 ```bash
-# View stack state file location
-ls -la ~/.pulumi/stacks/pulumi-demo-v1/
-
-# Check which backend you're using
-cat ~/.pulumi/credentials.json
-
-# View current stack info (from state)
-pulumi stack
-
-# Export state as JSON (for backup or inspection)
-pulumi stack export > stack-backup.json
-
-# Import state from JSON (restore)
-pulumi stack import < stack-backup.json
-```
-
-### Important Notes
-
-⚠️ **State File is Critical:**
-- Without the state file, Pulumi doesn't know what resources it created
-- Always backup `~/.pulumi/stacks/` if backing up your machine
-- Don't manually edit the state file (use `pulumi` commands)
-
-⚠️ **Local Backend Limitations:**
-- State is only on your computer (not shared with team)
-- No state locking (don't run multiple `pulumi up` simultaneously)
-- Need to manually backup state files
-
-⚠️ **State File is NOT in Git:**
-- The `.gitignore` doesn't exclude state files (they're outside the project)
-- State contains sensitive information (resource IDs, configurations)
-- For team collaboration, consider using Pulumi Cloud or AWS S3 backend
-
-### Alternative Backends
-
-You can change to other backends later:
-
-**Pulumi Cloud (Free for individuals):**
-```bash
+# Login via browser (recommended)
 pulumi login
+
+# Or login with access token
+pulumi login
+# Then paste your token from https://app.pulumi.com/account/tokens
+
+# Verify login
+pulumi whoami
+# Output: edim2525
 ```
 
-**AWS S3 Backend:**
-```bash
-pulumi login s3://my-pulumi-state-bucket
-```
-
-**Azure Blob Storage:**
-```bash
-pulumi login azblob://my-container
-```
-
-### Stack State in This Repository
-
-For portability and backup, this repository includes a **stack state backup file**:
-
-```
-stack-state-dev.json
-```
-
-This file contains a snapshot of your infrastructure state that you can:
-- Commit to version control for backup
-- Share with team members
-- Use to restore state if needed
-
-#### Managing Stack State in Repo
-
-We've included a helper script `manage-state.sh` to manage stack state:
+### View Your Stacks
 
 ```bash
-# Export current state to file
-./manage-state.sh export
+# List all stacks
+pulumi stack ls
 
-# Import state from file (useful for restore or setup on new machine)
-./manage-state.sh import
+# View stack in browser
+pulumi stack --show-urls
 
-# Show state information
-./manage-state.sh info
+# Or visit directly:
+# - Dev:  https://app.pulumi.com/edim2525/pulumi-demo-v1/dev
+# - Prod: https://app.pulumi.com/edim2525/pulumi-demo-v1/prod
 ```
 
-#### Manual State Management
+## Working with Stacks
+
+### Switch to Dev Environment
 
 ```bash
-# Export stack state manually
-pulumi stack export --file stack-state-dev.json
-
-# Import stack state manually
-pulumi stack import --file stack-state-dev.json
-
-# View state difference
-pulumi stack export | diff stack-state-dev.json -
+cd pulumi_resources/environments/dev
+pulumi stack ls  # See all stacks
+pulumi preview   # Preview changes
+pulumi up        # Deploy changes
 ```
 
-#### When to Update Stack State File
-
-Update `stack-state-dev.json` after major infrastructure changes:
-```bash
-pulumi up                          # Deploy changes
-./manage-state.sh export           # Export new state
-git add stack-state-dev.json      # Stage changes
-git commit -m "Update stack state after deployment"
-git push                           # Push to GitHub
-```
-
-#### Security Considerations
-
-⚠️ **Important:** The stack state file contains:
-- Resource IDs and ARNs
-- Configuration values
-- Potentially sensitive information
-
-For this demo project, it's fine to include in a public repo. However, for production:
-- Use Pulumi Cloud or S3 backend instead
-- Or keep repo private
-- Or exclude state file from Git (add `stack-state-dev.json` to `.gitignore`)
-
-## Project Setup Commands
+### Switch to Prod Environment
 
 ```bash
-# 1. Configure Pulumi to use local backend (state stored locally)
-pulumi login --local
-
-# 2. Create new Pulumi project
-pulumi new aws-python --yes --name pulumi-demo-v1 --description "My first Pulumi project - AWS S3 bucket" --stack dev
-
-# 3. Activate Python virtual environment
-source venv/bin/activate
+cd pulumi_resources/environments/prod
+pulumi stack ls  # See all stacks
+pulumi preview   # Preview changes
+pulumi up        # Deploy changes
 ```
 
-## Pulumi Commands
+### View Stack Configuration
 
-**Important:** Make sure to load your environment variables first:
+```bash
+# View config for current stack
+pulumi config
+
+# Get specific config value
+pulumi config get bucket_name
+pulumi config get environment
+
+# View all stack info
+pulumi stack
+```
+
+## Managing S3 Buckets
+
+### Add Another Bucket
+
+To add another S3 bucket to your infrastructure:
+
+#### 1. Update the Infrastructure Code
+
+Edit `pulumi_resources/__main__.py`:
+
+```python
+"""An AWS Python Pulumi program"""
+
+import pulumi
+from pulumi_aws import s3
+
+# Get configuration
+config = pulumi.Config()
+bucket_name = config.require("bucket_name")
+environment = config.require("environment")
+
+# Create primary S3 Bucket
+bucket = s3.Bucket(
+    f'{bucket_name}-bucket',
+    bucket=bucket_name,
+    tags={
+        "Environment": environment,
+        "Project": "pulumi-demo",
+        "ManagedBy": "Pulumi",
+    }
+)
+
+# Create second S3 Bucket (NEW)
+second_bucket_name = config.get("second_bucket_name") or f"{bucket_name}-backup"
+backup_bucket = s3.Bucket(
+    f'{second_bucket_name}-bucket',
+    bucket=second_bucket_name,
+    tags={
+        "Environment": environment,
+        "Project": "pulumi-demo",
+        "ManagedBy": "Pulumi",
+        "Purpose": "Backup",
+    }
+)
+
+# Export bucket names and ARNs
+pulumi.export('bucket_name', bucket.id)
+pulumi.export('bucket_arn', bucket.arn)
+pulumi.export('backup_bucket_name', backup_bucket.id)  # NEW
+pulumi.export('backup_bucket_arn', backup_bucket.arn)  # NEW
+```
+
+#### 2. Configure the Bucket Name (Optional)
+
+If you want to specify a custom name for the second bucket:
+
+```bash
+# For dev environment
+cd pulumi_resources/environments/dev
+pulumi config set second_bucket_name edi-pulumi-demo-dev-backup
+
+# For prod environment
+cd pulumi_resources/environments/prod
+pulumi config set second_bucket_name edi-pulumi-demo-prod-backup
+```
+
+#### 3. Preview and Deploy
+
+```bash
+# Preview changes
+pulumi preview
+
+# Deploy the new bucket
+pulumi up
+
+# Verify in AWS
+aws s3 ls | grep edi-pulumi-demo
+```
+
+#### 4. Verify Outputs
+
+```bash
+# View all stack outputs
+pulumi stack output
+
+# View specific output
+pulumi stack output backup_bucket_name
+pulumi stack output backup_bucket_arn
+```
+
+### Add Multiple Buckets with a Loop
+
+If you need to create several similar buckets, use a loop:
+
+```python
+"""An AWS Python Pulumi program"""
+
+import pulumi
+from pulumi_aws import s3
+
+# Get configuration
+config = pulumi.Config()
+bucket_name = config.require("bucket_name")
+environment = config.require("environment")
+
+# Create primary bucket
+bucket = s3.Bucket(
+    f'{bucket_name}-bucket',
+    bucket=bucket_name,
+    tags={
+        "Environment": environment,
+        "Project": "pulumi-demo",
+        "ManagedBy": "Pulumi",
+    }
+)
+
+# Create multiple purpose-specific buckets
+bucket_purposes = ["logs", "backups", "uploads", "archives"]
+additional_buckets = []
+
+for purpose in bucket_purposes:
+    bucket_obj = s3.Bucket(
+        f'{bucket_name}-{purpose}-bucket',
+        bucket=f"{bucket_name}-{purpose}",
+        tags={
+            "Environment": environment,
+            "Project": "pulumi-demo",
+            "ManagedBy": "Pulumi",
+            "Purpose": purpose,
+        }
+    )
+    additional_buckets.append(bucket_obj)
+    # Export each bucket
+    pulumi.export(f'{purpose}_bucket_name', bucket_obj.id)
+    pulumi.export(f'{purpose}_bucket_arn', bucket_obj.arn)
+
+# Export primary bucket
+pulumi.export('bucket_name', bucket.id)
+pulumi.export('bucket_arn', bucket.arn)
+```
+
+This will create:
+- `edi-pulumi-demo-dev` (primary)
+- `edi-pulumi-demo-dev-logs`
+- `edi-pulumi-demo-dev-backups`
+- `edi-pulumi-demo-dev-uploads`
+- `edi-pulumi-demo-dev-archives`
+
+### Remove a Bucket
+
+To remove a bucket from your infrastructure:
+
+#### 1. Update the Infrastructure Code
+
+Edit `pulumi_resources/__main__.py` and **remove or comment out** the bucket definition:
+
+```python
+# # REMOVED: Second bucket no longer needed
+# backup_bucket = s3.Bucket(
+#     f'{second_bucket_name}-bucket',
+#     bucket=second_bucket_name,
+#     ...
+# )
+
+# Also remove the exports
+# pulumi.export('backup_bucket_name', backup_bucket.id)
+# pulumi.export('backup_bucket_arn', backup_bucket.arn)
+```
+
+#### 2. Preview the Removal
+
+```bash
+cd pulumi_resources/environments/dev
+pulumi preview
+
+# You should see: "- aws:s3/bucket:Bucket (delete)"
+```
+
+#### 3. Delete the Bucket
+
+```bash
+pulumi up
+
+# Pulumi will show the bucket will be deleted
+# Type 'yes' to confirm
+```
+
+**Important:** The bucket must be **empty** before Pulumi can delete it. If it contains objects:
+
+```bash
+# Empty the bucket first
+aws s3 rm s3://edi-pulumi-demo-dev-backup --recursive
+
+# Then run pulumi up again
+pulumi up
+```
+
+#### 4. Verify Removal
+
+```bash
+# Check AWS
+aws s3 ls | grep edi-pulumi-demo
+
+# Check stack outputs
+pulumi stack output
+```
+
+### Alternative: Delete Bucket Manually
+
+If you need to delete a bucket without removing it from code:
+
+```bash
+# Empty and delete bucket
+aws s3 rb s3://edi-pulumi-demo-dev-backup --force
+
+# Refresh Pulumi state to detect the deletion
+cd pulumi_resources/environments/dev
+pulumi refresh
+
+# Pulumi will detect the bucket is gone and offer to remove it from state
+```
+
+## Common Pulumi Commands
+
+**Important:** Always load your environment variables first:
 ```bash
 source ~/.zprofile  # Loads AWS credentials and Pulumi passphrase
 ```
 
 ### Preview Changes (Dry Run)
-Preview what resources will be created without actually deploying:
 ```bash
 pulumi preview
 ```
 
 ### Deploy Infrastructure
-Create the S3 bucket in AWS:
 ```bash
 pulumi up
 ```
-- Pulumi will show you the planned changes
-- Type `yes` to confirm and deploy
-- If prompted for passphrase, press Enter (no passphrase)
+
+### Destroy All Resources
+```bash
+pulumi destroy
+```
 
 ### View Stack Outputs
-Check the bucket name and ARN after deployment:
 ```bash
-pulumi stack output
-pulumi stack output bucket_name
-pulumi stack output bucket_arn
+pulumi stack output              # All outputs
+pulumi stack output bucket_name  # Specific output
 ```
 
 ### View Current Stack Info
 ```bash
-pulumi stack
-pulumi stack ls
+pulumi stack      # Current stack details
+pulumi stack ls   # List all stacks
 ```
 
 ### Refresh State
-Sync Pulumi state with actual AWS resources:
 ```bash
-pulumi refresh
+pulumi refresh    # Sync state with actual AWS resources
 ```
 
-## How to Delete the Bucket
-
-### Option 1: Using Pulumi (Recommended)
-This removes the bucket and cleans up Pulumi state:
-
+### View Resource Details
 ```bash
-# 1. Make sure you're in the project directory
-cd /Users/edim/edi-github/pulumi-demo-v1
-
-# 2. Load AWS credentials
-source ~/.zprofile
-
-# 3. Activate virtual environment
-source venv/bin/activate
-
-# 4. Destroy the infrastructure
-pulumi destroy
+pulumi stack export | grep -A 10 "aws:s3"  # View S3 resources in state
 ```
 
-Pulumi will:
-- Show you what will be deleted
-- Ask for confirmation (type `yes`)
-- Delete the S3 bucket from AWS
-- Remove the resources from Pulumi state
+## Verify Your Infrastructure
 
-### Option 2: Using AWS CLI
-Delete the bucket directly using AWS CLI:
+### Check S3 Buckets
 
 ```bash
-# Delete bucket (must be empty first)
-aws s3 rb s3://my-first-bucket-2f3cb75 --force
+# List all buckets
+aws s3 ls
 
-# Or if bucket has objects, delete all contents first:
-aws s3 rm s3://my-first-bucket-2f3cb75 --recursive
-aws s3 rb s3://my-first-bucket-2f3cb75
+# List only demo buckets
+aws s3 ls | grep edi-pulumi-demo
+
+# View bucket details
+aws s3api get-bucket-tagging --bucket edi-pulumi-demo-dev
+aws s3api get-bucket-location --bucket edi-pulumi-demo-dev
 ```
 
-**Note:** If you delete via AWS CLI, run `pulumi refresh` to sync Pulumi state.
+### Check Pulumi Resources
 
-### Option 3: AWS Console
-1. Go to AWS Console → S3
-2. Find bucket: `my-first-bucket-2f3cb75`
-3. Empty the bucket first (if it contains objects)
-4. Click "Delete" and confirm
+```bash
+# View stack resources
+cd pulumi_resources/environments/dev
+pulumi stack
 
-**Note:** After manual deletion, run `pulumi refresh` to update state.
-
-## Project Structure
-
+# View in browser
+pulumi stack --show-urls
+# Or visit: https://app.pulumi.com/edim2525/pulumi-demo-v1/dev
 ```
-pulumi-demo-v1/
-├── __main__.py              # Main Pulumi program (defines S3 bucket)
-├── Pulumi.yaml              # Project configuration
-├── Pulumi.dev.yaml          # Stack configuration for 'dev'
-├── requirements.txt         # Python dependencies
-├── README.md                # This documentation
-├── .gitignore               # Git ignore rules
-├── manage-state.sh          # Stack state management script
-├── stack-state-dev.json     # Stack state backup (in repo)
-└── venv/                    # Python virtual environment (not in git)
-```
-
-**Note:** The primary Pulumi state is in `~/.pulumi/stacks/pulumi-demo-v1/dev.json` (outside this repo), but we keep a backup copy as `stack-state-dev.json` in the repository.
-
-## Current Resources
-
-After successful deployment:
-- **S3 Bucket:** `my-first-bucket-2f3cb75`
-- **Tags:** Environment=Dev, Project=pulumi-demo
 
 ## Troubleshooting
 
@@ -374,11 +678,6 @@ aws sts get-caller-identity
 ```
 
 ### Error: Passphrase must be set
-```
-error: passphrase must be set with PULUMI_CONFIG_PASSPHRASE or PULUMI_CONFIG_PASSPHRASE_FILE
-```
-
-**Solution:**
 ```bash
 # Load environment variables (includes passphrase)
 source ~/.zprofile
@@ -390,36 +689,70 @@ export PULUMI_CONFIG_PASSPHRASE=""
 pulumi stack
 ```
 
-### Error: Permission denied (s3:GetBucketPolicy)
-Add the missing S3 permissions to your IAM user `edi-pulumi-user`.
-
-### Error: Passphrase required
-Press Enter when prompted (we're using an empty passphrase for this demo).
-
-## Useful Commands
-
+### Error: Not logged in to Pulumi Cloud
 ```bash
-# List all S3 buckets in your account
-aws s3 ls
+# Login to Pulumi Cloud
+pulumi login
 
-# Check if the Pulumi bucket exists
-aws s3 ls | grep my-first-bucket
+# Verify
+pulumi whoami
+```
 
-# View bucket details
-aws s3api get-bucket-location --bucket my-first-bucket-2f3cb75
-aws s3api get-bucket-tagging --bucket my-first-bucket-2f3cb75
+### Error: Permission denied (s3:GetBucketPolicy)
+The bucket is created successfully, but Pulumi cannot read the bucket policy due to missing IAM permissions. The bucket works fine; this is just a post-creation verification issue.
 
-# View Pulumi state files (local backend)
-ls -la ~/.pulumi/
+**To fix:** Add these permissions to IAM user `edi-pulumi-user`:
+- `s3:GetBucketPolicy`
+- `s3:PutBucketPolicy`
+- `s3:GetBucketVersioning`
+
+### Error: Bucket already exists
+```bash
+# Check if bucket exists
+aws s3 ls | grep your-bucket-name
+
+# Option 1: Use a different bucket name
+pulumi config set bucket_name new-unique-bucket-name
+
+# Option 2: Import existing bucket into Pulumi
+pulumi import aws:s3/bucket:Bucket my-bucket my-existing-bucket-name
+```
+
+## Clean Up
+
+To completely remove all infrastructure:
+
+### Delete Dev Environment
+```bash
+cd pulumi_resources/environments/dev
+pulumi destroy
+```
+
+### Delete Prod Environment
+```bash
+cd pulumi_resources/environments/prod
+pulumi destroy
+```
+
+### Delete Stacks (Optional)
+```bash
+# Remove dev stack
+pulumi stack select dev
+pulumi stack rm dev
+
+# Remove prod stack
+pulumi stack select prod
+pulumi stack rm prod
 ```
 
 ## Next Steps
 
-- Modify `__main__.py` to add more AWS resources
-- Configure bucket versioning, encryption, or lifecycle policies
-- Add S3 objects to the bucket
-- Explore other AWS services (EC2, Lambda, RDS, etc.)
-- Learn about Pulumi stacks for multi-environment deployments
+- **Add more AWS resources:** EC2 instances, Lambda functions, RDS databases
+- **Configure bucket policies:** Public access, encryption, versioning
+- **Add bucket lifecycle policies:** Transition objects to Glacier
+- **Set up bucket notifications:** Trigger Lambda on object uploads
+- **Implement infrastructure testing:** Use Pulumi testing framework
+- **Add CI/CD pipeline:** Automate deployments with GitHub Actions
 
 ## Resources
 
@@ -427,3 +760,20 @@ ls -la ~/.pulumi/
 - [Pulumi AWS Provider](https://www.pulumi.com/registry/packages/aws/)
 - [Pulumi Python SDK](https://www.pulumi.com/docs/reference/pkg/python/pulumi/)
 - [AWS S3 Documentation](https://docs.aws.amazon.com/s3/)
+- [Pulumi Cloud Dashboard](https://app.pulumi.com/edim2525/pulumi-demo-v1)
+
+## Git Configuration
+
+The repository is configured with SSH key authentication:
+
+```bash
+# SSH key location
+/Users/edim/keys/edim_github_key
+
+# Git remote
+git@github.com:edim2525/pulumi-demo-v1.git
+```
+
+## License
+
+This is a personal demo project for learning Pulumi and AWS.
