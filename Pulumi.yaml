@@ -1,0 +1,11 @@
+name: pulumi-demo-v1
+description: My first Pulumi project - AWS S3 bucket
+runtime:
+  name: python
+  options:
+    toolchain: pip
+    virtualenv: venv
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: aws-python
