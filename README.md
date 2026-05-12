@@ -56,14 +56,27 @@ The IAM user `edi-pulumi-user` needs the following S3 permissions:
 
 Pulumi needs to track the state of your infrastructure to know what resources exist and their current configuration. Since we configured it with `pulumi login --local`, the state is stored **locally on your computer** (not in Pulumi's cloud service).
 
-### State Storage Location
+### State Storage Locations
 
-Your stack state is stored in:
+Your stack state exists in **TWO locations**:
+
+#### 1. Primary State (Used by Pulumi)
 ```
 ~/.pulumi/stacks/pulumi-demo-v1/dev.json
 ```
+This is where Pulumi reads and writes state during operations (`pulumi up`, `pulumi preview`, etc.).
 
-Breaking this down:
+#### 2. Backup State (In This Repository)
+```
+stack-state-dev.json
+```
+This is a backup copy stored in the repository for:
+- Version control and history
+- Portability (easy to clone and restore)
+- Team sharing (if needed)
+- Backup and disaster recovery
+
+Breaking down the primary state path:
 - `~/.pulumi/` - Pulumi's home directory
 - `stacks/` - Where all stack state files are stored
 - `pulumi-demo-v1/` - Your project name
@@ -330,14 +343,18 @@ aws s3 rb s3://my-first-bucket-2f3cb75
 
 ```
 pulumi-demo-v1/
-├── __main__.py           # Main Pulumi program (defines S3 bucket)
-├── Pulumi.yaml           # Project configuration
-├── Pulumi.dev.yaml       # Stack configuration for 'dev'
-├── requirements.txt      # Python dependencies
-├── venv/                 # Python virtual environment
-├── .gitignore           # Git ignore file
-└── README.md            # This file
+├── __main__.py              # Main Pulumi program (defines S3 bucket)
+├── Pulumi.yaml              # Project configuration
+├── Pulumi.dev.yaml          # Stack configuration for 'dev'
+├── requirements.txt         # Python dependencies
+├── README.md                # This documentation
+├── .gitignore               # Git ignore rules
+├── manage-state.sh          # Stack state management script
+├── stack-state-dev.json     # Stack state backup (in repo)
+└── venv/                    # Python virtual environment (not in git)
 ```
+
+**Note:** The primary Pulumi state is in `~/.pulumi/stacks/pulumi-demo-v1/dev.json` (outside this repo), but we keep a backup copy as `stack-state-dev.json` in the repository.
 
 ## Current Resources
 
