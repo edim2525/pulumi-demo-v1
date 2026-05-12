@@ -10,7 +10,7 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-# Load AWS credentials
+# Load AWS credentials and Pulumi passphrase
 source ~/.zprofile
 
 # Function to export stack state

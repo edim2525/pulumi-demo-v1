@@ -25,6 +25,9 @@ AWS credentials are stored in `~/.zprofile` as environment variables:
 export AWS_ACCESS_KEY_ID="your-access-key"
 export AWS_SECRET_ACCESS_KEY="your-secret-key"
 export AWS_REGION="us-east-1"
+
+# Pulumi passphrase (empty for this demo project)
+export PULUMI_CONFIG_PASSPHRASE=""
 ```
 
 **Load credentials in terminal:**
@@ -236,6 +239,11 @@ source venv/bin/activate
 
 ## Pulumi Commands
 
+**Important:** Make sure to load your environment variables first:
+```bash
+source ~/.zprofile  # Loads AWS credentials and Pulumi passphrase
+```
+
 ### Preview Changes (Dry Run)
 Preview what resources will be created without actually deploying:
 ```bash
@@ -348,11 +356,28 @@ source ~/.zprofile
 aws sts get-caller-identity
 ```
 
+### Error: Passphrase must be set
+```
+error: passphrase must be set with PULUMI_CONFIG_PASSPHRASE or PULUMI_CONFIG_PASSPHRASE_FILE
+```
+
+**Solution:**
+```bash
+# Load environment variables (includes passphrase)
+source ~/.zprofile
+
+# Or set it manually for current session
+export PULUMI_CONFIG_PASSPHRASE=""
+
+# Verify
+pulumi stack
+```
+
 ### Error: Permission denied (s3:GetBucketPolicy)
 Add the missing S3 permissions to your IAM user `edi-pulumi-user`.
 
 ### Error: Passphrase required
-Press Enter when prompted (we're using no passphrase for this demo).
+Press Enter when prompted (we're using an empty passphrase for this demo).
 
 ## Useful Commands
 
