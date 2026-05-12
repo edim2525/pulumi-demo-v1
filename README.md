@@ -546,28 +546,33 @@ This will create:
 
 To remove a bucket from your infrastructure:
 
-#### 1. Update the Infrastructure Code
+#### 1. Update the Configuration
 
-Edit `pulumi_resources/__main__.py` and **remove or comment out** the bucket definition:
+Simply remove the bucket from the list in your stack config:
 
-```python
-# # REMOVED: Second bucket no longer needed
-# backup_bucket = s3.Bucket(
-#     f'{second_bucket_name}-bucket',
-#     bucket=second_bucket_name,
-#     ...
-# )
+**Edit `environments/dev/Pulumi.dev.yaml` (or prod):**
+```yaml
+config:
+  pulumi-demo-v1:environment: dev
+  pulumi-demo-v1:buckets:
+    - edi-pulumi-demo-dev
+    - edi-pulumi-demo-dev-logs
+    # REMOVED: - edi-pulumi-demo-dev-backups
+  aws:region: us-east-1
+```
 
-# Also remove the exports
-# pulumi.export('backup_bucket_name', backup_bucket.id)
-# pulumi.export('backup_bucket_arn', backup_bucket.arn)
+**Or use the CLI:**
+```bash
+cd environments/dev
+# Set the buckets list without the one you want to remove
+pulumi config set buckets '["edi-pulumi-demo-dev", "edi-pulumi-demo-dev-logs"]'
 ```
 
 #### 2. Preview the Removal
 
 ```bash
-cd pulumi_resources
-pulumi stack select dev  # or prod, depending on which environment
+cd environments/dev  # or environments/prod
+pulumi stack select dev  # or prod
 pulumi preview
 
 # You should see: "- aws:s3/bucket:Bucket (delete)"
@@ -586,7 +591,7 @@ pulumi up
 
 ```bash
 # Empty the bucket first
-aws s3 rm s3://edi-pulumi-demo-dev-backup --recursive
+aws s3 rm s3://edi-pulumi-demo-dev-backups --recursive
 
 # Then run pulumi up again
 pulumi up
