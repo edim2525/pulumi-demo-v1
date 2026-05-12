@@ -14,21 +14,23 @@ My first Pulumi project for creating AWS S3 buckets using Python with multi-envi
 
 ```
 pulumi-demo-v1/
-├── pulumi_resources/           # All infrastructure code
-│   ├── __main__.py            # Infrastructure definition
-│   ├── Pulumi.yaml            # Project configuration
-│   ├── Pulumi.dev.yaml        # Dev stack configuration
-│   ├── Pulumi.prod.yaml       # Prod stack configuration
-│   └── requirements.txt       # Python dependencies
-├── venv/                      # Python virtual environment
+├── pulumi_resources/                    # All infrastructure code
+│   ├── __main__.py                      # Infrastructure definition
+│   ├── Pulumi.yaml                      # Project configuration
+│   ├── requirements.txt                 # Python dependencies
+│   └── environments/                    # Stack configurations by environment
+│       ├── dev/
+│       │   └── Pulumi.dev.yaml          # Dev stack configuration
+│       └── prod/
+│           └── Pulumi.prod.yaml         # Prod stack configuration
+├── venv/                                # Python virtual environment
 └── README.md
 ```
 
-**Simple and clean:**
-- All Pulumi files are in `pulumi_resources/`
-- One infrastructure file (`__main__.py`) used by both dev and prod
-- Separate configuration for each stack (`Pulumi.dev.yaml`, `Pulumi.prod.yaml`)
-- No duplicate or redundant files
+**Company-standard structure:**
+- Stack configurations are organized in `environments/` subdirectories
+- One infrastructure file (`__main__.py`) used by all environments
+- Matches company repo pattern at `/Users/edim/skai-github/pulumi-singlestore-provision`
 
 ## Current Infrastructure
 
@@ -347,21 +349,19 @@ All Pulumi operations are run from the `pulumi_resources/` directory. You switch
 cd pulumi_resources
 ```
 
-### Switch to Dev Stack
+### Work with Dev Environment
 
 ```bash
-cd pulumi_resources
-pulumi stack select dev    # Select dev stack
+cd pulumi_resources/environments/dev
 pulumi config              # View dev configuration
 pulumi preview             # Preview dev changes
 pulumi up                  # Deploy to dev
 ```
 
-### Switch to Prod Stack
+### Work with Prod Environment
 
 ```bash
-cd pulumi_resources
-pulumi stack select prod   # Select prod stack
+cd pulumi_resources/environments/prod
 pulumi config              # View prod configuration
 pulumi preview             # Preview prod changes
 pulumi up                  # Deploy to prod
@@ -370,15 +370,15 @@ pulumi up                  # Deploy to prod
 ### View All Stacks
 
 ```bash
-cd pulumi_resources
-pulumi stack ls            # List all stacks and see which is active
+cd pulumi_resources/environments/dev  # Or any subdirectory with Pulumi.yaml parent
+pulumi stack ls                        # List all stacks and see which is active
 ```
 
 ### How It Works
 
-- **One infrastructure file** (`__main__.py`) is shared by both stacks
-- **Configuration per stack** (`Pulumi.dev.yaml`, `Pulumi.prod.yaml`) customizes the deployment
-- **`pulumi stack select`** tells Pulumi which configuration to use
+- **One infrastructure file** (`__main__.py`) is shared by all environments
+- **Configuration per environment** (in `environments/dev/` and `environments/prod/`)
+- **Navigate to environment directory** and Pulumi automatically uses the right config
 - **Same code, different config** = deploy the same infrastructure to different environments with different settings
 
 ### View Stack Configuration
