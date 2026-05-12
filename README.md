@@ -35,12 +35,19 @@ pulumi-demo-v1/
 ## Current Infrastructure
 
 **Dev Environment:**
-- Bucket: `edi-pulumi-demo-dev`
+- Main Bucket: `edi-pulumi-demo-dev`
+- Additional Buckets:
+  - `edi-pulumi-demo-dev-logs`
+  - `edi-pulumi-demo-dev-backups`
 - Tags: Environment=dev, Project=pulumi-demo, ManagedBy=Pulumi
 - Stack URL: https://app.pulumi.com/edim2525/pulumi-demo-v1/dev
 
 **Prod Environment:**
-- Bucket: `edi-pulumi-demo-prod`
+- Main Bucket: `edi-pulumi-demo-prod`
+- Additional Buckets:
+  - `edi-pulumi-demo-prod-logs`
+  - `edi-pulumi-demo-prod-backups`
+  - `edi-pulumi-demo-prod-archives`
 - Tags: Environment=prod, Project=pulumi-demo, ManagedBy=Pulumi
 - Stack URL: https://app.pulumi.com/edim2525/pulumi-demo-v1/prod
 
@@ -397,86 +404,64 @@ pulumi stack
 
 ## Managing S3 Buckets
 
-### Add Another Bucket
+### Add Additional Buckets (Company-Standard Pattern)
 
-To add another S3 bucket to your infrastructure:
+This project uses a **config-driven approach** matching our company's pattern at `/Users/edim/skai-github/pulumi-singlestore-provision`. To add more buckets:
 
-#### 1. Update the Infrastructure Code
+#### 1. Update Environment Configuration
 
-Edit `pulumi_resources/__main__.py`:
+Edit the stack config file for the environment:
 
-```python
-"""An AWS Python Pulumi program"""
-
-import pulumi
-from pulumi_aws import s3
-
-# Get configuration
-config = pulumi.Config()
-bucket_name = config.require("bucket_name")
-environment = config.require("environment")
-
-# Create primary S3 Bucket
-bucket = s3.Bucket(
-    f'{bucket_name}-bucket',
-    bucket=bucket_name,
-    tags={
-        "Environment": environment,
-        "Project": "pulumi-demo",
-        "ManagedBy": "Pulumi",
-    }
-)
-
-# Create second S3 Bucket (NEW)
-second_bucket_name = config.get("second_bucket_name") or f"{bucket_name}-backup"
-backup_bucket = s3.Bucket(
-    f'{second_bucket_name}-bucket',
-    bucket=second_bucket_name,
-    tags={
-        "Environment": environment,
-        "Project": "pulumi-demo",
-        "ManagedBy": "Pulumi",
-        "Purpose": "Backup",
-    }
-)
-
-# Export bucket names and ARNs
-pulumi.export('bucket_name', bucket.id)
-pulumi.export('bucket_arn', bucket.arn)
-pulumi.export('backup_bucket_name', backup_bucket.id)  # NEW
-pulumi.export('backup_bucket_arn', backup_bucket.arn)  # NEW
+**For Dev** (`environments/dev/Pulumi.dev.yaml`):
+```yaml
+config:
+  pulumi-demo-v1:bucket_name: edi-pulumi-demo-dev
+  pulumi-demo-v1:environment: dev
+  pulumi-demo-v1:additional_buckets:
+    - edi-pulumi-demo-dev-logs
+    - edi-pulumi-demo-dev-backups
+    - edi-pulumi-demo-dev-new-bucket  # Add new bucket here
+  aws:region: us-east-1
 ```
 
-#### 2. Configure the Bucket Name (Optional)
+**For Prod** (`environments/prod/Pulumi.prod.yaml`):
+```yaml
+config:
+  pulumi-demo-v1:bucket_name: edi-pulumi-demo-prod
+  pulumi-demo-v1:environment: prod
+  pulumi-demo-v1:additional_buckets:
+    - edi-pulumi-demo-prod-logs
+    - edi-pulumi-demo-prod-backups
+    - edi-pulumi-demo-prod-archives
+    - edi-pulumi-demo-prod-new-bucket  # Add new bucket here
+  aws:region: us-east-1
+```
+
+**Or use the CLI:**
+```bash
+cd environments/dev
+pulumi config set additional_buckets '["edi-pulumi-demo-dev-logs", "edi-pulumi-demo-dev-backups", "edi-pulumi-demo-dev-new-bucket"]'
+```
+
+#### 2. Preview and Deploy
 
 If you want to specify a custom name for the second bucket:
 
 ```bash
-cd pulumi_resources
+cd environments/dev  # or environments/prod
+pulumi stack select dev  # or prod
 
-# For dev environment
-pulumi stack select dev
-pulumi config set second_bucket_name edi-pulumi-demo-dev-backup
-
-# For prod environment
-pulumi stack select prod
-pulumi config set second_bucket_name edi-pulumi-demo-prod-backup
-```
-
-#### 3. Preview and Deploy
-
-```bash
 # Preview changes
 pulumi preview
 
-# Deploy the new bucket
+# Deploy the new buckets
 pulumi up
 
 # Verify in AWS
 aws s3 ls | grep edi-pulumi-demo
 ```
 
-#### 4. Verify Outputs
+#### 3. Verify Outputs
 
 ```bash
 # View all stack outputs

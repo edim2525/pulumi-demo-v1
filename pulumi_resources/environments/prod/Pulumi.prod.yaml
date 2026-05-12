@@ -1,4 +1,8 @@
 config:
   pulumi-demo-v1:bucket_name: edi-pulumi-demo-prod
   pulumi-demo-v1:environment: prod
+  pulumi-demo-v1:additional_buckets:
+    - edi-pulumi-demo-prod-logs
+    - edi-pulumi-demo-prod-backups
+    - edi-pulumi-demo-prod-archives
   aws:region: us-east-1
