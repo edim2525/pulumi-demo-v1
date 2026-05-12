@@ -15,22 +15,22 @@ My first Pulumi project for creating AWS S3 buckets using Python with multi-envi
 ```
 pulumi-demo-v1/
 ├── pulumi_resources/           # Infrastructure code
-│   ├── __main__.py            # Main infrastructure definition
-│   ├── Pulumi.yaml            # Project configuration
-│   ├── Pulumi.dev.yaml        # Dev stack config (managed by CLI)
-│   ├── Pulumi.prod.yaml       # Prod stack config (managed by CLI)
-│   ├── requirements.txt       # Python dependencies
+│   ├── __main__.py            # Main infrastructure definition (shared)
+│   ├── Pulumi.yaml            # Project configuration (shared)
+│   ├── requirements.txt       # Python dependencies (shared)
 │   └── environments/          # Per-environment configurations
 │       ├── dev/
-│       │   ├── Pulumi.dev.yaml
-│       │   └── requirements.txt
+│       │   └── Pulumi.dev.yaml     # Dev stack config
 │       └── prod/
-│           ├── Pulumi.prod.yaml
-│           └── requirements.txt
+│           └── Pulumi.prod.yaml    # Prod stack config
 ├── venv/                      # Python virtual environment
-├── requirements.txt           # Top-level dependencies
 └── README.md
 ```
+
+**Key points:**
+- **Shared files** (`__main__.py`, `Pulumi.yaml`, `requirements.txt`) are in `pulumi_resources/`
+- **Environment-specific configs** (`Pulumi.dev.yaml`, `Pulumi.prod.yaml`) are in `environments/dev/` and `environments/prod/`
+- **No duplicate files** - Only one `requirements.txt`, used by both environments
 
 ## Current Infrastructure
 
@@ -340,11 +340,14 @@ pulumi stack --show-urls
 
 ## Working with Stacks
 
+All Pulumi operations should be run from the environment directories. The shared files (`__main__.py`, `Pulumi.yaml`, `requirements.txt`) are automatically found by Pulumi in the parent directory.
+
 ### Switch to Dev Environment
 
 ```bash
 cd pulumi_resources/environments/dev
-pulumi stack ls  # See all stacks
+pulumi stack ls  # See all stacks (automatically uses ../Pulumi.yaml)
+pulumi config    # View dev stack configuration
 pulumi preview   # Preview changes
 pulumi up        # Deploy changes
 ```
@@ -353,10 +356,24 @@ pulumi up        # Deploy changes
 
 ```bash
 cd pulumi_resources/environments/prod
-pulumi stack ls  # See all stacks
+pulumi stack ls  # See all stacks (automatically uses ../Pulumi.yaml)
+pulumi config    # View prod stack configuration
 pulumi preview   # Preview changes
 pulumi up        # Deploy changes
 ```
+
+### How It Works
+
+When you run Pulumi commands from `environments/dev/`:
+1. Pulumi finds `Pulumi.dev.yaml` in the current directory (stack config)
+2. Pulumi searches UP and finds `Pulumi.yaml` in `pulumi_resources/` (project config)
+3. Pulumi uses `__main__.py` from `pulumi_resources/` (infrastructure code)
+4. Pulumi uses `requirements.txt` from `pulumi_resources/` (dependencies)
+
+This way, you have:
+- ✅ **One copy** of infrastructure code (no duplication)
+- ✅ **Separate configs** for each environment  
+- ✅ **Clear organization** - just `cd` to the environment folder you want to work with
 
 ### View Stack Configuration
 
