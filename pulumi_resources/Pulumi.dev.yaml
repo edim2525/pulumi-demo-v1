@@ -1,0 +1,4 @@
+config:
+  pulumi-demo-v1:bucket_name: edi-pulumi-demo-dev
+  pulumi-demo-v1:environment: dev
+  aws:region: us-east-1
