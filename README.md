@@ -395,8 +395,8 @@ pulumi stack ls                        # List all stacks and see which is active
 pulumi config
 
 # Get specific config value
-pulumi config get bucket_name
 pulumi config get environment
+pulumi config get buckets
 
 # View all stack info
 pulumi stack
@@ -404,48 +404,60 @@ pulumi stack
 
 ## Managing S3 Buckets
 
-### Add Additional Buckets (Company-Standard Pattern)
+### Clear, Simple Structure
 
-This project uses a **config-driven approach** matching our company's pattern at `/Users/edim/skai-github/pulumi-singlestore-provision`. To add more buckets:
+All buckets are defined in a **single list** - no confusing "main" vs "additional" buckets!
 
-#### 1. Update Environment Configuration
-
-Edit the stack config file for the environment:
-
-**For Dev** (`environments/dev/Pulumi.dev.yaml`):
+**Dev Configuration** (`environments/dev/Pulumi.dev.yaml`):
 ```yaml
 config:
-  pulumi-demo-v1:bucket_name: edi-pulumi-demo-dev
   pulumi-demo-v1:environment: dev
-  pulumi-demo-v1:additional_buckets:
+  pulumi-demo-v1:buckets:
+    - edi-pulumi-demo-dev
     - edi-pulumi-demo-dev-logs
     - edi-pulumi-demo-dev-backups
-    - edi-pulumi-demo-dev-new-bucket  # Add new bucket here
   aws:region: us-east-1
 ```
 
-**For Prod** (`environments/prod/Pulumi.prod.yaml`):
+**Prod Configuration** (`environments/prod/Pulumi.prod.yaml`):
 ```yaml
 config:
-  pulumi-demo-v1:bucket_name: edi-pulumi-demo-prod
   pulumi-demo-v1:environment: prod
-  pulumi-demo-v1:additional_buckets:
+  pulumi-demo-v1:buckets:
+    - edi-pulumi-demo-prod
     - edi-pulumi-demo-prod-logs
     - edi-pulumi-demo-prod-backups
     - edi-pulumi-demo-prod-archives
-    - edi-pulumi-demo-prod-new-bucket  # Add new bucket here
   aws:region: us-east-1
 ```
 
-**Or use the CLI:**
-```bash
-cd environments/dev
-pulumi config set additional_buckets '["edi-pulumi-demo-dev-logs", "edi-pulumi-demo-dev-backups", "edi-pulumi-demo-dev-new-bucket"]'
+**Why This Structure?**
+- ✅ **Simple**: All buckets in one list
+- ✅ **Consistent**: Every bucket is treated the same way
+- ✅ **Clear**: No confusion about "main" vs "additional"
+- ✅ **Flexible**: Different environments can have different numbers of buckets
+
+### Add More Buckets
+
+**Option 1: Edit the YAML file**
+```yaml
+config:
+  pulumi-demo-v1:environment: dev
+  pulumi-demo-v1:buckets:
+    - edi-pulumi-demo-dev
+    - edi-pulumi-demo-dev-logs
+    - edi-pulumi-demo-dev-backups
+    - edi-pulumi-demo-dev-new-bucket  # Just add to the list!
+  aws:region: us-east-1
 ```
 
-#### 2. Preview and Deploy
+**Option 2: Use the CLI**
+```bash
+cd environments/dev
+pulumi config set buckets '["edi-pulumi-demo-dev", "edi-pulumi-demo-dev-logs", "edi-pulumi-demo-dev-backups", "edi-pulumi-demo-dev-new-bucket"]'
+```
 
-If you want to specify a custom name for the second bucket:
+### Preview and Deploy
 
 ```bash
 cd environments/dev  # or environments/prod
