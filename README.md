@@ -147,12 +147,12 @@ aws_secret_access_key = YOUR_PROD_SECRET
 **Use specific profile with Pulumi:**
 ```bash
 # Set profile for dev stack
-cd pulumi_resources/environments/dev
+cd pulumi_resources
 export AWS_PROFILE=dev-account
 pulumi up
 
 # Set profile for prod stack
-cd pulumi_resources/environments/prod
+cd pulumi_resources
 export AWS_PROFILE=prod-account
 pulumi up
 ```
@@ -163,11 +163,11 @@ You can specify the AWS profile directly in your Pulumi stack configuration:
 
 ```bash
 # For dev stack
-cd pulumi_resources/environments/dev
+cd pulumi_resources
 pulumi config set aws:profile dev-account
 
 # For prod stack
-cd pulumi_resources/environments/prod
+cd pulumi_resources
 pulumi config set aws:profile prod-account
 ```
 
@@ -206,12 +206,12 @@ export PULUMI_CONFIG_PASSPHRASE=""
 ```bash
 # For dev
 source dev-env.sh
-cd pulumi_resources/environments/dev
+cd pulumi_resources
 pulumi up
 
 # For prod
 source prod-env.sh
-cd pulumi_resources/environments/prod
+cd pulumi_resources
 pulumi up
 ```
 
@@ -242,7 +242,7 @@ When you run `pulumi up` or `pulumi preview`, Pulumi:
 
 **Example:**
 ```bash
-cd pulumi_resources/environments/dev
+cd pulumi_resources
 pulumi preview
 
 # Pulumi will:
@@ -452,12 +452,14 @@ pulumi.export('backup_bucket_arn', backup_bucket.arn)  # NEW
 If you want to specify a custom name for the second bucket:
 
 ```bash
+cd pulumi_resources
+
 # For dev environment
-cd pulumi_resources/environments/dev
+pulumi stack select dev
 pulumi config set second_bucket_name edi-pulumi-demo-dev-backup
 
 # For prod environment
-cd pulumi_resources/environments/prod
+pulumi stack select prod
 pulumi config set second_bucket_name edi-pulumi-demo-prod-backup
 ```
 
@@ -567,7 +569,8 @@ Edit `pulumi_resources/__main__.py` and **remove or comment out** the bucket def
 #### 2. Preview the Removal
 
 ```bash
-cd pulumi_resources/environments/dev
+cd pulumi_resources
+pulumi stack select dev  # or prod, depending on which environment
 pulumi preview
 
 # You should see: "- aws:s3/bucket:Bucket (delete)"
@@ -611,7 +614,8 @@ If you need to delete a bucket without removing it from code:
 aws s3 rb s3://edi-pulumi-demo-dev-backup --force
 
 # Refresh Pulumi state to detect the deletion
-cd pulumi_resources/environments/dev
+cd pulumi_resources
+pulumi stack select dev  # or prod, depending on which environment
 pulumi refresh
 
 # Pulumi will detect the bucket is gone and offer to remove it from state
@@ -680,13 +684,19 @@ aws s3api get-bucket-location --bucket edi-pulumi-demo-dev
 ### Check Pulumi Resources
 
 ```bash
-# View stack resources
-cd pulumi_resources/environments/dev
+cd pulumi_resources
+
+# View dev stack resources
+pulumi stack select dev
+pulumi stack
+
+# View prod stack resources
+pulumi stack select prod
 pulumi stack
 
 # View in browser
 pulumi stack --show-urls
-# Or visit: https://app.pulumi.com/edim2525/pulumi-demo-v1/dev
+# Or visit: https://app.pulumi.com/edim2525/pulumi-demo-v1/dev (or /prod)
 ```
 
 ## Troubleshooting
@@ -747,13 +757,15 @@ To completely remove all infrastructure:
 
 ### Delete Dev Environment
 ```bash
-cd pulumi_resources/environments/dev
+cd pulumi_resources
+pulumi stack select dev
 pulumi destroy
 ```
 
 ### Delete Prod Environment
 ```bash
-cd pulumi_resources/environments/prod
+cd pulumi_resources
+pulumi stack select prod
 pulumi destroy
 ```
 
