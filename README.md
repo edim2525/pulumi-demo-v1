@@ -17,20 +17,23 @@ pulumi-demo-v1/
 ├── pulumi_resources/                    # All infrastructure code
 │   ├── __main__.py                      # Infrastructure definition
 │   ├── Pulumi.yaml                      # Project configuration
+│   ├── Pulumi.dev.yaml -> environments/dev/Pulumi.dev.yaml      # Symlink
+│   ├── Pulumi.prod.yaml -> environments/prod/Pulumi.prod.yaml   # Symlink
 │   ├── requirements.txt                 # Python dependencies
 │   └── environments/                    # Stack configurations by environment
 │       ├── dev/
-│       │   └── Pulumi.dev.yaml          # Dev stack configuration
+│       │   └── Pulumi.dev.yaml          # Dev stack configuration (actual file)
 │       └── prod/
-│           └── Pulumi.prod.yaml         # Prod stack configuration
+│           └── Pulumi.prod.yaml         # Prod stack configuration (actual file)
 ├── venv/                                # Python virtual environment
 └── README.md
 ```
 
 **Company-standard structure:**
-- Stack configurations are organized in `environments/` subdirectories
+- Stack configurations stored in `environments/` subdirectories (single source of truth)
+- Symlinks at root level allow Pulumi to find them
 - One infrastructure file (`__main__.py`) used by all environments
-- Matches company repo pattern at `/Users/edim/skai-github/pulumi-singlestore-provision`
+- Clean, organized, and easy to maintain
 
 ## Current Infrastructure
 
@@ -359,7 +362,8 @@ cd pulumi_resources
 ### Work with Dev Environment
 
 ```bash
-cd pulumi_resources/environments/dev
+cd pulumi_resources
+pulumi stack select dev    # Switch to dev stack
 pulumi config              # View dev configuration
 pulumi preview             # Preview dev changes
 pulumi up                  # Deploy to dev
@@ -368,7 +372,8 @@ pulumi up                  # Deploy to dev
 ### Work with Prod Environment
 
 ```bash
-cd pulumi_resources/environments/prod
+cd pulumi_resources
+pulumi stack select prod   # Switch to prod stack
 pulumi config              # View prod configuration
 pulumi preview             # Preview prod changes
 pulumi up                  # Deploy to prod
@@ -377,16 +382,38 @@ pulumi up                  # Deploy to prod
 ### View All Stacks
 
 ```bash
-cd pulumi_resources/environments/dev  # Or any subdirectory with Pulumi.yaml parent
-pulumi stack ls                        # List all stacks and see which is active
+cd pulumi_resources
+pulumi stack ls            # List all stacks and see which is active
 ```
 
 ### How It Works
 
 - **One infrastructure file** (`__main__.py`) is shared by all environments
-- **Configuration per environment** (in `environments/dev/` and `environments/prod/`)
-- **Navigate to environment directory** and Pulumi automatically uses the right config
+- **Configuration per environment** stored in `environments/dev/` and `environments/prod/`
+- **Symlinks** at root allow Pulumi to find configs while keeping them organized
+- **`pulumi stack select`** switches between environments
 - **Same code, different config** = deploy the same infrastructure to different environments with different settings
+
+### Why Symlinks?
+
+Pulumi expects stack config files (`Pulumi.dev.yaml`, `Pulumi.prod.yaml`) to be in the same directory as `Pulumi.yaml` (the project file). However, we want to organize configs in `environments/` subdirectories for better structure.
+
+**Solution:** Symlinks (shortcuts) at the root point to the actual files in subdirectories:
+
+```
+pulumi_resources/
+├── Pulumi.dev.yaml ─────→ environments/dev/Pulumi.dev.yaml    (symlink)
+├── Pulumi.prod.yaml ────→ environments/prod/Pulumi.prod.yaml  (symlink)
+└── environments/
+    ├── dev/Pulumi.dev.yaml     ← Actual file (single source of truth)
+    └── prod/Pulumi.prod.yaml   ← Actual file (single source of truth)
+```
+
+**Benefits:**
+- ✅ Configs organized in folders (clean structure)
+- ✅ Pulumi finds them at root (works without extra flags)
+- ✅ Only one copy of each file (edit anywhere, updates everywhere)
+- ✅ Tracked in git (both symlinks and actual files)
 
 ### View Stack Configuration
 
@@ -453,14 +480,15 @@ config:
 
 **Option 2: Use the CLI**
 ```bash
-cd environments/dev
+cd pulumi_resources
+pulumi stack select dev  # or prod
 pulumi config set buckets '["edi-pulumi-demo-dev", "edi-pulumi-demo-dev-logs", "edi-pulumi-demo-dev-backups", "edi-pulumi-demo-dev-new-bucket"]'
 ```
 
 ### Preview and Deploy
 
 ```bash
-cd environments/dev  # or environments/prod
+cd pulumi_resources
 pulumi stack select dev  # or prod
 
 # Preview changes
@@ -563,7 +591,8 @@ config:
 
 **Or use the CLI:**
 ```bash
-cd environments/dev
+cd pulumi_resources
+pulumi stack select dev  # or prod
 # Set the buckets list without the one you want to remove
 pulumi config set buckets '["edi-pulumi-demo-dev", "edi-pulumi-demo-dev-logs"]'
 ```
@@ -571,7 +600,8 @@ pulumi config set buckets '["edi-pulumi-demo-dev", "edi-pulumi-demo-dev-logs"]'
 #### 2. Preview the Removal
 
 ```bash
-cd environments/dev  # or environments/prod
+cd pulumi_resources
+cd pulumi_resources
 pulumi stack select dev  # or prod
 pulumi preview
 
