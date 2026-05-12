@@ -1,2 +1,5 @@
 *.pyc
 venv/
+
+# Pulumi local state (already stored in ~/.pulumi/)
+# We keep a copy in stack-state-dev.json for backup/portability

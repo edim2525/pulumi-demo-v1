@@ -157,6 +157,70 @@ pulumi login s3://my-pulumi-state-bucket
 pulumi login azblob://my-container
 ```
 
+### Stack State in This Repository
+
+For portability and backup, this repository includes a **stack state backup file**:
+
+```
+stack-state-dev.json
+```
+
+This file contains a snapshot of your infrastructure state that you can:
+- Commit to version control for backup
+- Share with team members
+- Use to restore state if needed
+
+#### Managing Stack State in Repo
+
+We've included a helper script `manage-state.sh` to manage stack state:
+
+```bash
+# Export current state to file
+./manage-state.sh export
+
+# Import state from file (useful for restore or setup on new machine)
+./manage-state.sh import
+
+# Show state information
+./manage-state.sh info
+```
+
+#### Manual State Management
+
+```bash
+# Export stack state manually
+pulumi stack export --file stack-state-dev.json
+
+# Import stack state manually
+pulumi stack import --file stack-state-dev.json
+
+# View state difference
+pulumi stack export | diff stack-state-dev.json -
+```
+
+#### When to Update Stack State File
+
+Update `stack-state-dev.json` after major infrastructure changes:
+```bash
+pulumi up                          # Deploy changes
+./manage-state.sh export           # Export new state
+git add stack-state-dev.json      # Stage changes
+git commit -m "Update stack state after deployment"
+git push                           # Push to GitHub
+```
+
+#### Security Considerations
+
+⚠️ **Important:** The stack state file contains:
+- Resource IDs and ARNs
+- Configuration values
+- Potentially sensitive information
+
+For this demo project, it's fine to include in a public repo. However, for production:
+- Use Pulumi Cloud or S3 backend instead
+- Or keep repo private
+- Or exclude state file from Git (add `stack-state-dev.json` to `.gitignore`)
+
 ## Project Setup Commands
 
 ```bash

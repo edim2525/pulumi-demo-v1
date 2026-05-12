@@ -1,0 +1,205 @@
+{
+    "version": 3,
+    "deployment": {
+        "manifest": {
+            "time": "2026-05-12T13:37:30.210759+03:00",
+            "magic": "6410f7de290a9def1d81380733a731d5d3fac56a8f5cab0c132eb6de25a98c20",
+            "version": "v3.237.0"
+        },
+        "secrets_providers": {
+            "type": "passphrase",
+            "state": {
+                "salt": "v1:JfTOx8leZYU=:v1:VnqOlJkaL6UzYVne:5bBfu4o0rdRdDiKJlI5zRIPj6az9Ow=="
+            }
+        },
+        "resources": [
+            {
+                "urn": "urn:pulumi:dev::pulumi-demo-v1::pulumi:pulumi:Stack::pulumi-demo-v1-dev",
+                "custom": false,
+                "type": "pulumi:pulumi:Stack",
+                "created": "2026-05-12T10:37:25.461295Z",
+                "modified": "2026-05-12T10:37:25.461295Z",
+                "sourcePosition": "project:///venv/lib/python3.9/site-packages/pulumi/runtime/stack.py#177",
+                "stackTrace": [
+                    {
+                        "sourcePosition": "project:///venv/lib/python3.9/site-packages/pulumi/runtime/stack.py#177"
+                    },
+                    {
+                        "sourcePosition": "project:///venv/lib/python3.9/site-packages/pulumi/runtime/stack.py#78"
+                    },
+                    {
+                        "sourcePosition": "project:///venv/lib/python3.9/site-packages/pulumi/runtime/stack.py#180"
+                    },
+                    {
+                        "sourcePosition": "project:///../../../../Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/asyncio/events.py#80"
+                    },
+                    {
+                        "sourcePosition": "project:///../../../../Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/asyncio/base_events.py#1890"
+                    },
+                    {
+                        "sourcePosition": "project:///../../../../Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/asyncio/base_events.py#596"
+                    },
+                    {
+                        "sourcePosition": "project:///../../../../Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/asyncio/base_events.py#629"
+                    },
+                    {
+                        "sourcePosition": "project:///../../../../opt/homebrew/bin/pulumi-language-python-exec#232"
+                    }
+                ]
+            },
+            {
+                "urn": "urn:pulumi:dev::pulumi-demo-v1::pulumi:providers:aws::default_7_29_0",
+                "custom": true,
+                "id": "54c22ab0-dd68-4716-91ef-65fa9c628747",
+                "type": "pulumi:providers:aws",
+                "inputs": {
+                    "__internal": {},
+                    "region": "us-east-1",
+                    "skipCredentialsValidation": "false",
+                    "skipRegionValidation": "true",
+                    "version": "7.29.0"
+                },
+                "outputs": {
+                    "region": "us-east-1",
+                    "skipCredentialsValidation": "false",
+                    "skipRegionValidation": "true",
+                    "version": "7.29.0"
+                },
+                "created": "2026-05-12T10:37:27.248549Z",
+                "modified": "2026-05-12T10:37:27.248549Z"
+            },
+            {
+                "urn": "urn:pulumi:dev::pulumi-demo-v1::aws:s3/bucket:Bucket::my-first-bucket",
+                "custom": true,
+                "id": "my-first-bucket-2f3cb75",
+                "type": "aws:s3/bucket:Bucket",
+                "inputs": {
+                    "__defaults": [
+                        "bucket"
+                    ],
+                    "bucket": "my-first-bucket-2f3cb75",
+                    "region": "us-east-1",
+                    "tags": {
+                        "Environment": "Dev",
+                        "Project": "pulumi-demo"
+                    },
+                    "tagsAll": {
+                        "Environment": "Dev",
+                        "Project": "pulumi-demo"
+                    }
+                },
+                "outputs": {
+                    "__meta": "{\"e2bfb730-ecaa-11e6-8f88-34363bc7c4c0\":{\"create\":1200000000000,\"delete\":3600000000000,\"read\":1200000000000,\"update\":1200000000000}}",
+                    "__pulumi_raw_state_delta": {
+                        "obj": {
+                            "ps": {
+                                "grants": {
+                                    "arr": {}
+                                },
+                                "tags": {
+                                    "map": {}
+                                },
+                                "tagsAll": {
+                                    "map": {}
+                                }
+                            },
+                            "renamed": {
+                                "corsRules": "cors_rule",
+                                "grants": "grant",
+                                "lifecycleRules": "lifecycle_rule"
+                            }
+                        }
+                    },
+                    "accelerationStatus": null,
+                    "acl": null,
+                    "arn": "arn:aws:s3:::my-first-bucket-2f3cb75",
+                    "bucket": "my-first-bucket-2f3cb75",
+                    "bucketDomainName": "my-first-bucket-2f3cb75.s3.amazonaws.com",
+                    "bucketNamespace": "global",
+                    "bucketPrefix": "",
+                    "bucketRegion": null,
+                    "bucketRegionalDomainName": "my-first-bucket-2f3cb75.s3.us-east-1.amazonaws.com",
+                    "corsRules": null,
+                    "forceDestroy": false,
+                    "grants": [],
+                    "hostedZoneId": "Z3AQBSTGFYJSTF",
+                    "id": "my-first-bucket-2f3cb75",
+                    "lifecycleRules": null,
+                    "logging": null,
+                    "objectLockConfiguration": null,
+                    "objectLockEnabled": null,
+                    "policy": null,
+                    "region": "us-east-1",
+                    "replicationConfiguration": null,
+                    "requestPayer": null,
+                    "serverSideEncryptionConfiguration": null,
+                    "tags": {
+                        "Environment": "Dev",
+                        "Project": "pulumi-demo"
+                    },
+                    "tagsAll": {
+                        "Environment": "Dev",
+                        "Project": "pulumi-demo"
+                    },
+                    "versioning": null,
+                    "website": null,
+                    "websiteDomain": null,
+                    "websiteEndpoint": null
+                },
+                "parent": "urn:pulumi:dev::pulumi-demo-v1::pulumi:pulumi:Stack::pulumi-demo-v1-dev",
+                "initErrors": [
+                    "creating urn:pulumi:dev::pulumi-demo-v1::aws:s3/bucket:Bucket::my-first-bucket: 1 error occurred:\n\t* reading S3 Bucket (my-first-bucket-2f3cb75) policy: operation error S3: GetBucketPolicy, https response error StatusCode: 403, RequestID: VXSJZ2MFF9YZJ6FD, HostID: iujEDT20zhhBCk0cmtfR6yvD1qEOuZLQdGzVxwdG9z929MDd3bMcmgDUHHisEeusEr3y260j4RM=, api error AccessDenied: User: arn:aws:iam::821770019153:user/edi-pulumi-user is not authorized to perform: s3:GetBucketPolicy on resource: \"arn:aws:s3:::my-first-bucket-2f3cb75\" because no identity-based policy allows the s3:GetBucketPolicy action\n\n"
+                ],
+                "provider": "urn:pulumi:dev::pulumi-demo-v1::pulumi:providers:aws::default_7_29_0::54c22ab0-dd68-4716-91ef-65fa9c628747",
+                "propertyDependencies": {
+                    "tags": []
+                },
+                "created": "2026-05-12T10:37:30.21067Z",
+                "modified": "2026-05-12T10:37:30.21067Z",
+                "sourcePosition": "project:///__main__.py#8",
+                "stackTrace": [
+                    {
+                        "sourcePosition": "project:///__main__.py#8"
+                    },
+                    {
+                        "sourcePosition": "project:///../../../../Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/runpy.py#87"
+                    },
+                    {
+                        "sourcePosition": "project:///../../../../Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/runpy.py#285"
+                    },
+                    {
+                        "sourcePosition": "project:///../../../../opt/homebrew/bin/pulumi-language-python-exec#188"
+                    },
+                    {
+                        "sourcePosition": "project:///venv/lib/python3.9/site-packages/pulumi/runtime/stack.py#206"
+                    },
+                    {
+                        "sourcePosition": "project:///venv/lib/python3.9/site-packages/pulumi/runtime/stack.py#177"
+                    },
+                    {
+                        "sourcePosition": "project:///venv/lib/python3.9/site-packages/pulumi/runtime/stack.py#78"
+                    },
+                    {
+                        "sourcePosition": "project:///venv/lib/python3.9/site-packages/pulumi/runtime/stack.py#180"
+                    },
+                    {
+                        "sourcePosition": "project:///../../../../Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/asyncio/events.py#80"
+                    },
+                    {
+                        "sourcePosition": "project:///../../../../Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/asyncio/base_events.py#1890"
+                    },
+                    {
+                        "sourcePosition": "project:///../../../../Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/asyncio/base_events.py#596"
+                    },
+                    {
+                        "sourcePosition": "project:///../../../../Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/asyncio/base_events.py#629"
+                    },
+                    {
+                        "sourcePosition": "project:///../../../../opt/homebrew/bin/pulumi-language-python-exec#232"
+                    }
+                ]
+            }
+        ],
+        "metadata": {}
+    }
+}
