@@ -14,23 +14,21 @@ My first Pulumi project for creating AWS S3 buckets using Python with multi-envi
 
 ```
 pulumi-demo-v1/
-├── pulumi_resources/           # Infrastructure code
-│   ├── __main__.py            # Main infrastructure definition (shared)
-│   ├── Pulumi.yaml            # Project configuration (shared)
-│   ├── requirements.txt       # Python dependencies (shared)
-│   └── environments/          # Per-environment configurations
-│       ├── dev/
-│       │   └── Pulumi.dev.yaml     # Dev stack config
-│       └── prod/
-│           └── Pulumi.prod.yaml    # Prod stack config
+├── pulumi_resources/           # All infrastructure code
+│   ├── __main__.py            # Infrastructure definition
+│   ├── Pulumi.yaml            # Project configuration
+│   ├── Pulumi.dev.yaml        # Dev stack configuration
+│   ├── Pulumi.prod.yaml       # Prod stack configuration
+│   └── requirements.txt       # Python dependencies
 ├── venv/                      # Python virtual environment
 └── README.md
 ```
 
-**Key points:**
-- **Shared files** (`__main__.py`, `Pulumi.yaml`, `requirements.txt`) are in `pulumi_resources/`
-- **Environment-specific configs** (`Pulumi.dev.yaml`, `Pulumi.prod.yaml`) are in `environments/dev/` and `environments/prod/`
-- **No duplicate files** - Only one `requirements.txt`, used by both environments
+**Simple and clean:**
+- All Pulumi files are in `pulumi_resources/`
+- One infrastructure file (`__main__.py`) used by both dev and prod
+- Separate configuration for each stack (`Pulumi.dev.yaml`, `Pulumi.prod.yaml`)
+- No duplicate or redundant files
 
 ## Current Infrastructure
 
@@ -340,40 +338,48 @@ pulumi stack --show-urls
 
 ## Working with Stacks
 
-All Pulumi operations should be run from the environment directories. The shared files (`__main__.py`, `Pulumi.yaml`, `requirements.txt`) are automatically found by Pulumi in the parent directory.
+All Pulumi operations are run from the `pulumi_resources/` directory. You switch between dev and prod using `pulumi stack select`.
 
-### Switch to Dev Environment
+### Working Directory
 
 ```bash
-cd pulumi_resources/environments/dev
-pulumi stack ls  # See all stacks (automatically uses ../Pulumi.yaml)
-pulumi config    # View dev stack configuration
-pulumi preview   # Preview changes
-pulumi up        # Deploy changes
+# Always work from here
+cd pulumi_resources
 ```
 
-### Switch to Prod Environment
+### Switch to Dev Stack
 
 ```bash
-cd pulumi_resources/environments/prod
-pulumi stack ls  # See all stacks (automatically uses ../Pulumi.yaml)
-pulumi config    # View prod stack configuration
-pulumi preview   # Preview changes
-pulumi up        # Deploy changes
+cd pulumi_resources
+pulumi stack select dev    # Select dev stack
+pulumi config              # View dev configuration
+pulumi preview             # Preview dev changes
+pulumi up                  # Deploy to dev
+```
+
+### Switch to Prod Stack
+
+```bash
+cd pulumi_resources
+pulumi stack select prod   # Select prod stack
+pulumi config              # View prod configuration
+pulumi preview             # Preview prod changes
+pulumi up                  # Deploy to prod
+```
+
+### View All Stacks
+
+```bash
+cd pulumi_resources
+pulumi stack ls            # List all stacks and see which is active
 ```
 
 ### How It Works
 
-When you run Pulumi commands from `environments/dev/`:
-1. Pulumi finds `Pulumi.dev.yaml` in the current directory (stack config)
-2. Pulumi searches UP and finds `Pulumi.yaml` in `pulumi_resources/` (project config)
-3. Pulumi uses `__main__.py` from `pulumi_resources/` (infrastructure code)
-4. Pulumi uses `requirements.txt` from `pulumi_resources/` (dependencies)
-
-This way, you have:
-- ✅ **One copy** of infrastructure code (no duplication)
-- ✅ **Separate configs** for each environment  
-- ✅ **Clear organization** - just `cd` to the environment folder you want to work with
+- **One infrastructure file** (`__main__.py`) is shared by both stacks
+- **Configuration per stack** (`Pulumi.dev.yaml`, `Pulumi.prod.yaml`) customizes the deployment
+- **`pulumi stack select`** tells Pulumi which configuration to use
+- **Same code, different config** = deploy the same infrastructure to different environments with different settings
 
 ### View Stack Configuration
 
