@@ -49,6 +49,114 @@ The IAM user `edi-pulumi-user` needs the following S3 permissions:
 
 **Quick setup:** Attach `AmazonS3FullAccess` managed policy to your IAM user.
 
+## How Pulumi Stores Your Stack State
+
+Pulumi needs to track the state of your infrastructure to know what resources exist and their current configuration. Since we configured it with `pulumi login --local`, the state is stored **locally on your computer** (not in Pulumi's cloud service).
+
+### State Storage Location
+
+Your stack state is stored in:
+```
+~/.pulumi/stacks/pulumi-demo-v1/dev.json
+```
+
+Breaking this down:
+- `~/.pulumi/` - Pulumi's home directory
+- `stacks/` - Where all stack state files are stored
+- `pulumi-demo-v1/` - Your project name
+- `dev.json` - Your stack name (dev)
+
+### What's Stored in the State File
+
+The state file (`dev.json`) contains:
+1. **All deployed resources** - URNs, types, and properties of your S3 bucket
+2. **Resource outputs** - Values like bucket name and ARN
+3. **Configuration** - Stack config and secrets (encrypted with passphrase)
+4. **Deployment history** - Timestamps and metadata about deployments
+5. **Resource dependencies** - Relationships between resources
+
+### State File Backups
+
+Pulumi automatically creates backups:
+- `dev.json` - Current state
+- `dev.json.bak` - Previous state (before last operation)
+- `dev.json.attrs` - Metadata about current state
+- `dev.json.bak.attrs` - Metadata about backup
+
+### Backend Configuration
+
+Your backend is configured in:
+```
+~/.pulumi/credentials.json
+```
+
+Current setting:
+```json
+{
+    "current": "file://~",
+    "accessTokens": {
+        "file://~": ""
+    }
+}
+```
+
+This tells Pulumi to use the local file system (`file://~`) instead of the Pulumi Cloud service.
+
+### View Your State
+
+```bash
+# View stack state file location
+ls -la ~/.pulumi/stacks/pulumi-demo-v1/
+
+# Check which backend you're using
+cat ~/.pulumi/credentials.json
+
+# View current stack info (from state)
+pulumi stack
+
+# Export state as JSON (for backup or inspection)
+pulumi stack export > stack-backup.json
+
+# Import state from JSON (restore)
+pulumi stack import < stack-backup.json
+```
+
+### Important Notes
+
+⚠️ **State File is Critical:**
+- Without the state file, Pulumi doesn't know what resources it created
+- Always backup `~/.pulumi/stacks/` if backing up your machine
+- Don't manually edit the state file (use `pulumi` commands)
+
+⚠️ **Local Backend Limitations:**
+- State is only on your computer (not shared with team)
+- No state locking (don't run multiple `pulumi up` simultaneously)
+- Need to manually backup state files
+
+⚠️ **State File is NOT in Git:**
+- The `.gitignore` doesn't exclude state files (they're outside the project)
+- State contains sensitive information (resource IDs, configurations)
+- For team collaboration, consider using Pulumi Cloud or AWS S3 backend
+
+### Alternative Backends
+
+You can change to other backends later:
+
+**Pulumi Cloud (Free for individuals):**
+```bash
+pulumi login
+```
+
+**AWS S3 Backend:**
+```bash
+pulumi login s3://my-pulumi-state-bucket
+```
+
+**Azure Blob Storage:**
+```bash
+pulumi login azblob://my-container
+```
+
 ## Project Setup Commands
 
 ```bash
